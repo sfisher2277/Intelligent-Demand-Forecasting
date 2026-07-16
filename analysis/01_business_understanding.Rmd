@@ -1,0 +1,67 @@
+---
+title: "Business Understanding"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Purpose
+
+<!--
+What is this project trying to accomplish, and why does it matter?
+Frame it like a real business problem, not a class assignment.
+-->
+
+## The Business Problem
+
+<!--
+What is Rossmann (or your retailer) actually trying to decide using
+demand forecasts? E.g. inventory ordering, staffing levels, markdown
+timing, replenishment schedules. Be specific about the decision, not
+just "sales."
+-->
+
+## Who Uses This Forecast
+
+<!--
+Who in a real organization consumes a forecast like this, and what do
+they do differently depending on what the forecast says? Think about
+the different audiences: e.g. store-level ops vs. regional planning
+vs. finance/exec reporting. Draw on what you've seen in your own job.
+-->
+
+## What "Good" Looks Like
+
+<!--
+Pick a real accuracy metric (MAPE, WAPE, bias, RMSE, etc.) and justify
+why it fits this specific problem. Is bias more important than raw
+error here? Does the metric need to be weighted by revenue or volume?
+-->
+
+## Cost of Being Wrong
+
+<!--
+Forecasting errors are usually asymmetric. What does it cost the
+business to overforecast (excess inventory, markdowns, waste) versus
+underforecast (stockouts, lost sales, reputational cost)? This section
+is often missing from portfolio projects, so don't skip it.
+-->
+
+## Constraints and Assumptions
+
+<!--
+Any known limitations of this exercise vs. a real production
+environment: no live data feed, historical data only, simplified
+scope, etc. Naming these shows judgment.
+-->
+
+## Next Steps
+
+<!--
+Brief pointer to what comes next (data exploration) and what
+questions you're carrying into it.
+-->
