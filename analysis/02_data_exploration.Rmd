@@ -1,0 +1,169 @@
+---
+title: "02_data_exploration"
+author: "Shawn Fisher"
+date: "2026-07-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup and Load
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(lubridate)
+
+train <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/train.csv")
+store <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/store.csv")
+
+dim(train)   # expect 1017209 rows, 9 cols
+dim(store)   # expect 1115 rows, 10 cols
+```
+
+## Structure and Missingness
+
+```{r}
+skim_without_charts(train)
+skim_without_charts(store)
+```
+
+There are some missing values but not in the Store or Promo2 columns.
+
+## Merge for Convenience
+
+```{r}
+train <- train %>%
+  mutate(Date = ymd(Date)) %>%
+  left_join(store, by = "Store")
+```
+
+## Overall Sales Over Time
+
+```{r}
+daily_sales <- train %>%
+  group_by(Date) %>%
+  summarise(TotalSales = sum(Sales))
+
+ggplot(daily_sales, aes(Date, TotalSales)) +
+  geom_line() +
+  labs(title = "Total Daily Sales Across All Stores")
+```
+
+There is definite seasonality that appears to be weekly. There was also a large spike in sales at the end of 2013, presumably during the Christmas holiday.
+
+## Sample of Stores
+
+```{r}
+sample_stores <- sample(unique(train$Store), 4)
+
+train %>%
+  filter(Store %in% sample_stores) %>%
+  ggplot(aes(Date, Sales)) +
+  geom_line() +
+  facet_wrap(~Store, scales = "free_y") +
+  labs(title = "Sales for a Sample of Individual Stores")
+```
+
+Several stores were closed for the second half of 2014. The stores closed during the second half of 2014 had a sharp drop to zero sales and then sales immediately resumed normally upon reopening. Additionally, many stores saw the Christmas 2014 spike in sales, but this was not universal.
+
+## Effect of Promotion
+
+```{r}
+train %>%
+  filter(Open == 1) %>%
+  group_by(Promo) %>%
+  summarise(AvgSales = mean(Sales), n = n())
+```
+
+Promotions definitely had an impact on sales, causing an almost 39% increase in sales.
+
+## Closures and Zeros
+
+```{r}
+train %>%
+  count(Open, Sales == 0)
+```
+
+There were 54 days when stores were open but had zero sales.
+
+## Additional Detail on Clustering of Zero-Sales Stores
+
+```{r}
+train %>%
+  filter(Open == 1, Sales == 0) %>%
+  select(Store, Date, DayOfWeek, StateHoliday, SchoolHoliday) %>%
+  arrange(Date)
+```
+
+Some stores with no sales were open during school or state holidays but not enough to explain why they had no sales. Most days they were open were neither school nor state holidays.
+
+## Additional Detail on Promotion Clustering by Store Type
+
+```{r}
+train %>%
+  filter(Open == 1) %>%
+  group_by(StoreType, Promo) %>%
+  summarise(AvgSales = mean(Sales), n = n())
+```
+
+The store groups with more general volume did not benefit as much from the promotion as stores with less volume. Store group a benefited the most with a 44% increase in sales from the promotion, group d saw a 37% increase, group c saw 33% increase, followed by group b which only saw an 18% increase in sales from the promotion.
+
+## Additional Detail on Holidays and Assortment
+
+```{r}
+train %>%
+  count(StateHoliday)
+```
+
+State Holiday Breakdown
+0 - no holiday
+a - public holiday
+b - Easter
+c - Christmas
+
+```{r}
+train %>%
+  filter(Open == 1) %>%
+  group_by(StateHoliday) %>%
+  summarise(AvgSales = mean(Sales), n = n())
+```
+
+Sales actually increased on average for stores that chose to stay open during the state holidays. It is worth noting that the number of stores open during Christmas, and even Easter, were relatively few and so these sales during these two holidays shouldn't be over exaggerated.
+
+```{r}
+train %>%
+  filter(Open == 1) %>%
+  group_by(Assortment) %>%
+  summarise(AvgSales = mean(Sales), n = n())
+```
+
+Assortment Breakdown
+a - basic
+b - extra
+c - extended
+
+Similarly to Christmas and Easter sales, extra assortment sales were highest but were also in the fewest number of stores and so, again, should not be over exaggerated.
+
+## Additional Details on Promotion Clustering by Assortment Type
+
+```{r}
+train %>%
+  filter(Open == 1) %>%
+  group_by(Assortment, Promo) %>%
+  summarise(AvgSales = mean(Sales), n = n())
+```
+
+Assortment type b performed the worst of the three store types at only 7%, however the number of stores was the fewest and so, again, we do not want to over exaggerate those results.
+
+## Check for Overlap in Store Type b and Assortment Type b
+
+```{r}
+train %>%
+  distinct(Store, StoreType, Assortment) %>%
+  count(StoreType, Assortment)
+```
+
+Due to the similarity in results of store type and assortment type, it was worth checking if these were the same stores or to what degree they overlap. The weak promo response initially seen in both store type b and Assortment b appears to be largely the same effect: nearly all Assortment b stores (9 of 9) are also store type b, so this is one small, low-confidence segment showing up under two labels, not two independent findings. Store type b itself is only 17 stores total, so results for this group should be treated as low-confidence regardless of which label is used to describe it.
