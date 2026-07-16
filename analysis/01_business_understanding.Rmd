@@ -1,7 +1,7 @@
 ---
 title: "Business Understanding"
-author: "Your Name"
-date: "`r Sys.Date()`"
+author: "Shawn Fisher"
+date: "07/16/2026"
 output: html_document
 ---
 
@@ -11,57 +11,130 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Purpose
 
-<!--
-What is this project trying to accomplish, and why does it matter?
-Frame it like a real business problem, not a class assignment.
--->
+This project applies demand forecasting methods to the Rossmann Store Sales
+dataset, a historical record of daily sales across ~1,100 drugstore locations
+in Germany. The goal is to build, evaluate, and document a forecasting
+workflow that mirrors what a retail analytics team would actually use to
+plan inventory and staffing — not just to produce an accurate model, but to
+show the reasoning, assumptions, and business context behind it. This
+mirrors the kind of forecasting work I do professionally, applied here to a
+public dataset so the process and results can be shared openly.
 
 ## The Business Problem
 
-<!--
-What is Rossmann (or your retailer) actually trying to decide using
-demand forecasts? E.g. inventory ordering, staffing levels, markdown
-timing, replenishment schedules. Be specific about the decision, not
-just "sales."
--->
+Rossmann store managers currently forecast sales up to six weeks in advance
+using local knowledge and judgment, and forecast accuracy varies widely
+store to store. In a real retail operation, a demand forecast like this
+directly drives decisions such as:
+
+- How much inventory to order and when, to avoid both stockouts and excess
+  holding costs
+- How to staff stores for anticipated foot traffic
+- Where and when to run promotions, and what lift to expect from them
+- Regional or corporate planning around expected revenue
+
+The core business problem this project addresses is: **can a systematic,
+data-driven forecast outperform ad hoc, store-level judgment, and by how
+much?**
 
 ## Who Uses This Forecast
 
-<!--
-Who in a real organization consumes a forecast like this, and what do
-they do differently depending on what the forecast says? Think about
-the different audiences: e.g. store-level ops vs. regional planning
-vs. finance/exec reporting. Draw on what you've seen in your own job.
--->
+In a real organization, a forecast like this would have several different
+audiences, each needing something different from it — this maps closely
+onto the audience structure I already work with as a workforce management
+(WFM) forecaster, just applied to inventory and staffing instead of contact
+volume:
+
+- **Store-level operations** care about short-term, granular forecasts (daily,
+  per store) to guide staffing and local ordering decisions — the retail
+  equivalent of an interval-level staffing forecast in a contact center.
+  Getting the *shape* of demand right (which days are busy, not just the
+  average) matters as much as getting the total right.
+- **Regional or supply chain planning** cares more about aggregated,
+  medium-term forecasts (weekly, across store clusters) to plan
+  replenishment and distribution — comparable to capacity planning at the
+  site or network level in WFM, where the question shifts from "how many
+  people/units today" to "are we structurally over- or under-resourced this
+  quarter."
+- **Finance and executive stakeholders** care about higher-level, longer-horizon
+  trends — is the forecast suggesting revenue is tracking to plan, and where
+  is the biggest risk of a miss? This is the same role long-range volume
+  forecasts play in headcount and budget planning conversations.
+
+A single forecasting approach rarely serves all three well, which is worth
+keeping in mind when evaluating results: a model that's great at the
+aggregate level might still be too noisy to be useful store-by-store, and
+vice versa. This is a familiar tension from WFM — an interval forecast
+tuned for daily staffing decisions is not the same model you'd want feeding
+a quarterly budget conversation, even though both are "the same" forecast
+at different resolutions.
 
 ## What "Good" Looks Like
 
-<!--
-Pick a real accuracy metric (MAPE, WAPE, bias, RMSE, etc.) and justify
-why it fits this specific problem. Is bias more important than raw
-error here? Does the metric need to be weighted by revenue or volume?
--->
+For this project, I'll primarily track **MAPE** (mean absolute percentage
+error) since it's intuitive to communicate to non-technical stakeholders,
+supplemented by **bias** (whether the model systematically over- or
+under-forecasts). Consistent bias is often more operationally costly than
+random error — a model that's always 5% high is easier to plan around than
+one that swings unpredictably between +15% and -15%. This mirrors how I
+evaluate forecasts in WFM: a persistent understaffing bias erodes service
+level in a very different way than a volatile but on-average-correct
+forecast, even if both post similar aggregate error.
+
+I'll also watch **WAPE** (weighted absolute percentage error) at the
+aggregate level, since it weights errors by sales volume and avoids letting
+low-volume stores or days distort the headline accuracy number the way
+plain MAPE can — the same reason volume-weighted accuracy is preferred over
+simple averages when reporting forecast performance across queues or sites
+of very different sizes.
+
+Beyond the headline numbers, I want to evaluate accuracy and bias
+*conditionally* rather than just in aggregate — split out by day of week,
+promo vs. non-promo days, and holiday periods. A model can be accurate on
+average while being consistently wrong on the days that matter most
+operationally (weekends, promotions), the same way an interval forecast can
+look fine in a daily rollup while still missing peak-hour staffing needs.
+This kind of conditional accuracy check is standard practice in WFM and is
+often the difference between a forecast that looks good in a report and one
+that's actually trustworthy to plan against.
 
 ## Cost of Being Wrong
 
-<!--
-Forecasting errors are usually asymmetric. What does it cost the
-business to overforecast (excess inventory, markdowns, waste) versus
-underforecast (stockouts, lost sales, reputational cost)? This section
-is often missing from portfolio projects, so don't skip it.
--->
+Forecast errors in retail are asymmetric, and it's worth naming that
+explicitly rather than treating all error as equally bad:
+
+- **Underforecasting** risks stockouts — lost sales, and potentially lost
+  customer loyalty if it happens repeatedly at the same store.
+- **Overforecasting** risks excess inventory — holding costs, markdowns to
+  clear stock, and in the case of perishable or seasonal goods, outright
+  waste.
+
+Which direction is worse depends on the product and context (a stockout on
+a high-margin item is costlier than one on a low-margin item, for example),
+but in general retailers tend to weight stockouts as more costly than
+modest overstock, since lost sales are gone permanently while excess
+inventory can usually be discounted and recovered in part. This project
+will treat underforecasting as the higher-cost error, though this
+assumption is worth revisiting once real cost data is available.
 
 ## Constraints and Assumptions
 
-<!--
-Any known limitations of this exercise vs. a real production
-environment: no live data feed, historical data only, simplified
-scope, etc. Naming these shows judgment.
--->
+- This is historical data, not a live feed — there's no ability to see how
+  forecasts would perform in a true out-of-sample, real-time setting.
+- The dataset doesn't include actual cost data (holding costs, stockout
+  costs, margins), so business-impact estimates in later sections will be
+  illustrative rather than precise.
+- Some stores have missing data or closures that need to be handled
+  explicitly rather than silently dropped or imputed without comment.
+- The scope here is sales forecasting only — this project won't model
+  downstream decisions like actual inventory ordering or staffing
+  optimization, though it's framed with those use cases in mind.
 
 ## Next Steps
 
-<!--
-Brief pointer to what comes next (data exploration) and what
-questions you're carrying into it.
--->
+The next step is exploratory data analysis: understanding the shape of the
+data, checking for missingness and outliers, and looking for the seasonal
+and promotional patterns that will inform which forecasting approach makes
+sense. Open questions going in: how much do individual stores vary from
+each other, and does a single global model make sense, or will store-level
+or cluster-level models perform meaningfully better?
