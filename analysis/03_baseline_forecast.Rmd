@@ -1,0 +1,156 @@
+---
+title: "03_baseline_forecast"
+author: "Shawn Fisher"
+date: "2026-07-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup and Load
+
+```{r}
+library(tidyverse)
+library(fable)
+library(tsibble)
+library(feasts)
+library(ggtime)
+
+train <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/train.csv")
+store <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/store.csv")
+```
+
+## Train/Test Split
+
+```{r}
+
+#Total sales aggregate
+daily_sales <- train %>%
+  filter(Open == 1) %>%
+  group_by(Date) %>%
+  summarise(Sales = sum(Sales)) %>%
+  as_tsibble(index = Date)
+
+# Reserve the last 6 weeks as test
+cutoff <- max(daily_sales$Date) - 42
+
+train_ts <- daily_sales %>% filter(Date <= cutoff)
+test_ts  <- daily_sales %>% filter(Date > cutoff)
+
+nrow(train_ts); nrow(test_ts)
+```
+
+##Seasonal naive baseline
+
+```{r}
+naive_fit <- train_ts %>%
+  model(SNAIVE(Sales ~ lag("week")))
+
+naive_fc <- naive_fit %>%
+  forecast(h = nrow(test_ts))
+
+naive_fc %>%
+  autoplot(bind_rows(train_ts, test_ts)) +
+  labs(title = "Seasonal Naive Forecast vs Actual")
+```
+
+## ETS/ARIMA
+
+```{r}
+fit <- train_ts %>%
+  model(
+    snaive = SNAIVE(Sales ~ lag("week")),
+    ets    = ETS(Sales),
+    arima  = ARIMA(Sales)
+  )
+
+fc <- fit %>% forecast(h = nrow(test_ts))
+
+fc %>%
+  autoplot(bind_rows(train_ts, test_ts), level = NULL) +
+  labs(title = "Baseline Models vs Actual")
+```
+
+## Evaluation
+
+```{r}
+fc %>%
+  accuracy(test_ts) %>%
+  select(.model, MAPE, RMSE, ME)
+```
+
+*Results:* The MAPE results show ETS as the best, where with RMSE, the ARIMA model is best. For ME (bias), they all underperformed but the ARIME was least biased. The negative numbers for all three models in the ME mean they are overforecasting.
+
+## Checking Why All Three Models Overforecast.
+
+```{r}
+bind_rows(train_ts, test_ts) %>%
+  autoplot(Sales) +
+  geom_vline(xintercept = cutoff, linetype = "dashed", color = "red")
+```
+
+The last six weeks is a very small portion of the data and it is hard to read at this view, but it *appears* there is a slight downward trend, but it is difficult to see at this level. This needs to be looked at more closely.
+
+## Zoom In On Test Period Only
+
+```{r}
+fc %>%
+  autoplot(test_ts, level = NULL) +
+  labs(title = "Baseline Forecasts vs Actual — Test Period Only")
+```
+
+The shapes of the models are good but pretty consistently sit above the black actual for most of the cycle, so they are a bit too high on regular days. There also looks like there may be an outlier day of sales, the large spike the models do not catch.
+
+## Also Double Check If More Stores Are Closed During This Period Than Usual
+
+```{r}
+train %>%
+  group_by(Date) %>%
+  summarise(OpenStores = sum(Open)) %>%
+  ggplot(aes(Date, OpenStores)) +
+  geom_line() +
+  geom_vline(xintercept = cutoff, linetype = "dashed", color = "red")
+```
+
+There were many stores closed at the end of 2014, but we knew this already and it is in the training period. There does not appear to be an unusual amount of store closures during the test period.
+
+## Inspect Weekly Distribution For Possible Causes Of Overforecasting
+
+```{r}
+fc %>%
+  as_tibble() %>%
+  left_join(as_tibble(test_ts), by = "Date") %>%
+  mutate(error = Sales.y - .mean, weekday = wday(Date, label = TRUE)) %>%
+  group_by(.model, weekday) %>%
+  summarise(MeanError = mean(error), .groups = "drop")
+```
+
+Mondays are overforecast in all three models, while Sundays are the closest to actual. Could there be promos on Mondays driving this? Is it due to the cycle of Sundays into Mondays?
+
+```{r}
+train %>%
+  filter(Open == 1) %>%
+  mutate(weekday = wday(Date, label = TRUE)) %>%
+  group_by(weekday) %>%
+  summarise(AvgSales = mean(Sales), PromoRate = mean(Promo))
+```
+
+It is interesting that Sundays have a higher average of sales than the next highest day, Mondays, with no promos being run. However, these results disprove the theory that Monday promos are causing the overforecast because, although there is a slightly higher rate than the other days, the promo rate for Mondays is very similar to the other weekdays. Since Mondays are the second highest days of sales and the models are overforecasting, could the Mondays in the test period just be underperforming compared to the rest of the time period?
+
+## Examine Mondays
+
+```{r}
+train %>%
+  filter(Open == 1, wday(Date, label = TRUE) == "Mon") %>%
+  mutate(period = if_else(Date <= cutoff, "train", "test")) %>%
+  group_by(period) %>%
+  summarise(AvgMondaySales = mean(Sales), n = n())
+```
+
+This theory is also proven incorrect as the test and train Mondays are nearly identical in average sales.
+
+## Conclusion
+
+Monday showed the largest and most consistent over-forecasting error across all three baseline models. Two hypotheses were tested and ruled out: elevated Monday promo rates (not present — Monday's promo rate is in line with other weekdays) and a downward shift in Monday sales between train and test periods (also not present — per-store Monday averages are nearly identical). The most likely explanation is structural: SNAIVE in particular has no smoothing and simply repeats the prior week's value, so any single volatile week gets propagated forward without correction. This is a known limitation of naive/simple time series methods and motivates moving to a feature-based approach in the next phases of the project.
