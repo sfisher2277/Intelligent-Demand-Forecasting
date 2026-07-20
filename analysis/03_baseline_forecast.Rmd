@@ -81,7 +81,7 @@ fc %>%
   select(.model, MAPE, RMSE, ME)
 ```
 
-*Results:* The MAPE results show ETS as the best, where with RMSE, the ARIMA model is best. For ME (bias), they all underperformed but the ARIME was least biased. The negative numbers for all three models in the ME mean they are overforecasting.
+*Results:* ETS performed best on MAPE, whereas ARIMA performed best on RMSE, and all three models showed negative bias (over-forecasting), though ARIMA was the least biased.
 
 ## Checking Why All Three Models Overforecast.
 
@@ -127,7 +127,7 @@ fc %>%
   summarise(MeanError = mean(error), .groups = "drop")
 ```
 
-Mondays are overforecast in all three models, while Sundays are the closest to actual. Could there be promos on Mondays driving this? Is it due to the cycle of Sundays into Mondays?
+Mondays are overforecast in all three models, while Sundays are the closest to actual. Could there be promos on Mondays driving this? Is it due to the cycle of Sundays into Mondays? One thing worth noting is that the ARIMA model underforecasts Thursdays, whereas every other day is overforecasted.
 
 ```{r}
 train %>%
