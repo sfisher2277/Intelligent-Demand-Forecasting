@@ -48,3 +48,49 @@
 - Decide how to handle missing CompetitionDistance/Promo2 fields
   (impute vs. flag vs. exclude as predictors)
 - Next: pick a baseline forecasting approach
+
+
+### July 20, 2026
+
+**Did:**
+- Set up time-based train/test split (last 6 weeks held out as test,
+  matching Rossmann's real forecast horizon)
+- Built and compared three baseline models on aggregate daily sales:
+  SNAIVE (weekly lag), ETS, ARIMA
+- Fixed deprecated autoplot() warning by installing/loading ggtime
+- Evaluated all three on MAPE, RMSE, and ME (bias)
+
+**Found:**
+- ETS wins on MAPE (16.9%), ARIMA wins on RMSE, ARIMA has the least
+  bias — no single model wins on every metric, consistent with
+  expecting multiple metrics from the business understanding doc
+- Corrected an earlier misread of ME's sign: negative ME means the
+  models are OVER-forecasting, not under-forecasting
+- All three models over-forecast most strongly on Mondays (SNAIVE
+  worst by far, -2.42M) despite Monday being historically one of the
+  highest-sales weekdays alongside Sunday
+- Tested two hypotheses for the Monday effect and ruled both out:
+  - Monday promo rate is NOT elevated vs. other weekdays (0.56,
+    in line with Tue-Fri)
+  - Per-store Monday average sales are nearly identical between
+    train (8,216) and test (8,216) periods — no trend shift
+- Most likely explanation: SNAIVE has no smoothing and copies the
+  prior week's raw value forward, so noise from a single volatile
+  week propagates directly into the forecast — a structural
+  limitation, not a real behavioral pattern
+- Confirmed store count dips ~1,100 to ~900 for roughly mid-2014
+  to early 2015 (within training window, not test window) — not
+  the driver of test-period bias, but may be quietly affecting
+  ETS/ARIMA's learned seasonal parameters
+
+**Questions / next steps:**
+- Phase 4 (baseline models) is complete — ETS/ARIMA/SNAIVE all
+  established as a floor to beat
+- Start Phase 5: bring in Promo, StoreType, DayOfWeek, StateHoliday
+  as actual model features rather than relying on pure time series
+  structure
+- Consider whether a feature model needs to run at store level
+  rather than pure aggregate, given known store-to-store variation
+  from EDA
+- Possible follow-up (lower priority): investigate whether the
+  specific week SNAIVE copied from for Monday was itself anomalous
