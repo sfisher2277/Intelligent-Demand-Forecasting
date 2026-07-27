@@ -90,6 +90,60 @@
   as actual model features rather than relying on pure time series
   structure
 - Consider whether a feature model needs to run at store level
+
+
+### July 27, 2026
+
+**Did:**
+- Built 04_feature_model.Rmd: store-day level feature model using
+  Promo, DayOfWeek, StateHoliday, SchoolHoliday, StoreType,
+  Assortment, CompetitionDistance (+ missingness flag)
+- Fit and evaluated a GLM, then a random forest (ranger via
+  tidymodels), both at store-day level and rolled up to daily
+  aggregate for apples-to-apples comparison with Phase 4 baselines
+- Deliberately excluded Customers as a feature (not known in advance
+  in a real forecasting scenario — would be data leakage)
+- Sped up random forest fit using ranger's built-in num.threads
+  parallelism (not doParallel/foreach, which doesn't apply to a
+  single fit() call)
+
+**Found:**
+- GLM's Promo coefficient (~35% implied lift) closely matched EDA's
+  ~39% aggregate figure — good sanity check
+- GLM confirmed Monday/Sunday as highest-sales weekdays, consistent
+  with EDA
+- Full aggregate comparison table:
+  - SNAIVE: 17.4% MAPE / 1.78M RMSE
+  - ETS: 16.9% MAPE / 1.42M RMSE
+  - ARIMA: 21.8% MAPE / 1.34M RMSE
+  - GLM: 5.76% MAPE / 616K RMSE
+  - Random Forest: 5.43% MAPE / 541K RMSE
+- The big accuracy jump was baseline -> GLM (access to Promo/holiday
+  info), not GLM -> random forest (model complexity) — feature
+  access mattered more than algorithm sophistication here
+- Feature model resolved the severe Monday over-forecasting bias
+  found in Phase 4 baselines (SNAIVE: -2.42M -> GLM: +117 MeanError)
+- New, smaller issue surfaced: Sunday now has the highest error,
+  explained by only 33 of 1,115 stores ever being open on Sunday —
+  small, atypical subgroup, likely underrepresented in training
+- Random forest's top feature was CompetitionDistance, not Promo —
+  investigated with a smoothed plot and found a nonlinear,
+  counterintuitive relationship (closer competition = higher sales),
+  most likely because CompetitionDistance is a proxy for store
+  location density (urban/high-traffic vs. rural), not a direct
+  causal effect of competition itself
+- Random forest slightly more biased than GLM (+106K vs +70K ME)
+  despite being more accurate overall — noted rather than glossed
+  over
+
+**Questions / next steps:**
+- Phase 5 (feature-driven forecasting) is complete
+- Next: Phase 6 — formal model comparison write-up, tying accuracy
+  gains back to the "cost of being wrong" business framing from
+  Phase 2
+- Possible follow-up (lower priority): investigate whether Sunday's
+  small-sample issue is worth a separate handling approach, or just
+  a documented limitation
   rather than pure aggregate, given known store-to-store variation
   from EDA
 - Possible follow-up (lower priority): investigate whether the
