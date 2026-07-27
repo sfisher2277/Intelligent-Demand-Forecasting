@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Setup and Load
+### Setup and Load
 
 ```{r}
 library(tidyverse)
@@ -22,7 +22,7 @@ train <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecastin
 store <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/store.csv")
 ```
 
-## Train/Test Split
+### Train/Test Split
 
 ```{r}
 
@@ -42,7 +42,7 @@ test_ts  <- daily_sales %>% filter(Date > cutoff)
 nrow(train_ts); nrow(test_ts)
 ```
 
-##Seasonal naive baseline
+### Seasonal naive baseline
 
 ```{r}
 naive_fit <- train_ts %>%
@@ -56,7 +56,7 @@ naive_fc %>%
   labs(title = "Seasonal Naive Forecast vs Actual")
 ```
 
-## ETS/ARIMA
+### ETS/ARIMA
 
 ```{r}
 fit <- train_ts %>%
@@ -73,7 +73,7 @@ fc %>%
   labs(title = "Baseline Models vs Actual")
 ```
 
-## Evaluation
+### Evaluation
 
 ```{r}
 fc %>%
@@ -83,7 +83,7 @@ fc %>%
 
 *Results:* ETS performed best on MAPE, whereas ARIMA performed best on RMSE, and all three models showed negative bias (over-forecasting), though ARIMA was the least biased.
 
-## Checking Why All Three Models Overforecast.
+### Checking why all three models overforecast.
 
 ```{r}
 bind_rows(train_ts, test_ts) %>%
@@ -93,7 +93,7 @@ bind_rows(train_ts, test_ts) %>%
 
 The last six weeks is a very small portion of the data and it is hard to read at this view, but it *appears* there is a slight downward trend, but it is difficult to see at this level. This needs to be looked at more closely.
 
-## Zoom In On Test Period Only
+### Zoom in on test period only
 
 ```{r}
 fc %>%
@@ -103,7 +103,7 @@ fc %>%
 
 The shapes of the models are good but pretty consistently sit above the black actual for most of the cycle, so they are a bit too high on regular days. There also looks like there may be an outlier day of sales, the large spike the models do not catch.
 
-## Also Double Check If More Stores Are Closed During This Period Than Usual
+### Also double check if more stores are closed during this period than usual
 
 ```{r}
 train %>%
@@ -116,7 +116,7 @@ train %>%
 
 There were many stores closed at the end of 2014, but we knew this already and it is in the training period. There does not appear to be an unusual amount of store closures during the test period.
 
-## Inspect Weekly Distribution For Possible Causes Of Overforecasting
+### Inspect weekly distribution for possible causes of overforecasting
 
 ```{r}
 fc %>%
@@ -139,7 +139,7 @@ train %>%
 
 It is interesting that Sundays have a higher average of sales than the next highest day, Mondays, with no promos being run. However, these results disprove the theory that Monday promos are causing the overforecast because, although there is a slightly higher rate than the other days, the promo rate for Mondays is very similar to the other weekdays. Since Mondays are the second highest days of sales and the models are overforecasting, could the Mondays in the test period just be underperforming compared to the rest of the time period?
 
-## Examine Mondays
+### Examine Mondays
 
 ```{r}
 train %>%
@@ -151,6 +151,6 @@ train %>%
 
 This theory is also proven incorrect as the test and train Mondays are nearly identical in average sales.
 
-## Conclusion
+### Conclusion
 
 Monday showed the largest and most consistent over-forecasting error across all three baseline models. Two hypotheses were tested and ruled out: elevated Monday promo rates (not present — Monday's promo rate is in line with other weekdays) and a downward shift in Monday sales between train and test periods (also not present — per-store Monday averages are nearly identical). The most likely explanation is structural: SNAIVE in particular has no smoothing and simply repeats the prior week's value, so any single volatile week gets propagated forward without correction. This is a known limitation of naive/simple time series methods and motivates moving to a feature-based approach in the next phases of the project.

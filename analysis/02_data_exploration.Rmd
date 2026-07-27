@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Setup and Load
+### Setup and load
 
 ```{r}
 library(tidyverse)
@@ -23,7 +23,7 @@ dim(train)   # expect 1017209 rows, 9 cols
 dim(store)   # expect 1115 rows, 10 cols
 ```
 
-## Structure and Missingness
+### Structure and missingness
 
 ```{r}
 skim_without_charts(train)
@@ -32,7 +32,7 @@ skim_without_charts(store)
 
 There are some missing values but not in the Store or Promo2 columns.
 
-## Merge for Convenience
+### Merge for convenience
 
 ```{r}
 train <- train %>%
@@ -40,7 +40,7 @@ train <- train %>%
   left_join(store, by = "Store")
 ```
 
-## Overall Sales Over Time
+### Overall sales over time
 
 ```{r}
 daily_sales <- train %>%
@@ -54,7 +54,7 @@ ggplot(daily_sales, aes(Date, TotalSales)) +
 
 There is definite seasonality that appears to be weekly. There was also a large spike in sales at the end of 2013, presumably during the Christmas holiday.
 
-## Sample of Stores
+### Sample of stores
 
 ```{r}
 sample_stores <- sample(unique(train$Store), 4)
@@ -69,7 +69,7 @@ train %>%
 
 Several stores were closed for the second half of 2014. The stores closed during the second half of 2014 had a sharp drop to zero sales and then sales immediately resumed normally upon reopening. Additionally, many stores saw the Christmas 2014 spike in sales, but this was not universal.
 
-## Effect of Promotion
+### Effect of promotion
 
 ```{r}
 train %>%
@@ -80,7 +80,7 @@ train %>%
 
 Promotions definitely had an impact on sales, causing an almost 39% increase in sales.
 
-## Closures and Zeros
+### Closures and zeros
 
 ```{r}
 train %>%
@@ -89,7 +89,7 @@ train %>%
 
 There were 54 days when stores were open but had zero sales.
 
-## Additional Detail on Clustering of Zero-Sales Stores
+### Additional detail on clustering of zero-sales stores
 
 ```{r}
 train %>%
@@ -100,7 +100,7 @@ train %>%
 
 Some stores with no sales were open during school or state holidays but not enough to explain why they had no sales. Most days they were open were neither school nor state holidays.
 
-## Additional Detail on Promotion Clustering by Store Type
+### Additional detail on promotion clustering by store type
 
 ```{r}
 train %>%
@@ -111,7 +111,7 @@ train %>%
 
 The store groups with more general volume did not benefit as much from the promotion as stores with less volume. Store group a benefited the most with a 44% increase in sales from the promotion, group d saw a 37% increase, group c saw 33% increase, followed by group b which only saw an 18% increase in sales from the promotion.
 
-## Additional Detail on Holidays and Assortment
+### Additional detail on holidays and assortment
 
 ```{r}
 train %>%
@@ -147,7 +147,7 @@ c - extended
 
 Similarly to Christmas and Easter sales, extra assortment sales were highest but were also in the fewest number of stores and so, again, should not be over exaggerated.
 
-## Additional Details on Promotion Clustering by Assortment Type
+### Additional details on promotion clustering by assortment type
 
 ```{r}
 train %>%
@@ -158,7 +158,7 @@ train %>%
 
 Assortment type b performed the worst of the three store types at only 7%, however the number of stores was the fewest and so, again, we do not want to over exaggerate those results.
 
-## Check for Overlap in Store Type b and Assortment Type b
+### Check for overlap in store type b and assortment type b
 
 ```{r}
 train %>%

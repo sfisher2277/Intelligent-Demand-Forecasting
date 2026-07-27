@@ -1,0 +1,182 @@
+---
+title: "analysis/04_feature_model"
+author: "Shawn Fisher"
+date: "2026-07-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+
+# Rebuild the store-day level dataset (not aggregated in this part — one row per store per day)
+model_data <- train %>%
+  left_join(store, by = "Store") %>%
+  filter(Open == 1) %>%
+  mutate(
+    DayOfWeek = factor(DayOfWeek),
+    StateHoliday = factor(StateHoliday),
+    StoreType = factor(StoreType),
+    Assortment = factor(Assortment),
+    Store = factor(Store),
+    CompDist_missing = is.na(CompetitionDistance),
+    CompetitionDistance = if_else(is.na(CompetitionDistance),
+                                   median(CompetitionDistance, na.rm = TRUE),
+                                   CompetitionDistance)
+  ) %>%
+  select(Store, Date, Sales, DayOfWeek, Promo, StateHoliday, SchoolHoliday,
+         StoreType, Assortment, CompetitionDistance, CompDist_missing)
+```
+
+### Train/test split — same cutoff logic as the baseline forecast, but now at row level
+
+```{r}
+cutoff <- max(model_data$Date) - 42
+
+train_data <- model_data %>% filter(Date <= cutoff)
+test_data  <- model_data %>% filter(Date > cutoff)
+
+nrow(train_data); nrow(test_data)
+```
+
+### GLM baseline (interpretable first pass)
+
+```{r}
+glm_fit <- glm(
+  Sales ~ DayOfWeek + Promo + StateHoliday + SchoolHoliday +
+          StoreType + Assortment + CompetitionDistance + CompDist_missing,
+  data = train_data,
+  family = gaussian()
+)
+
+summary(glm_fit)
+```
+### Evaluate the GLM on the test set
+
+```{r}
+test_data <- test_data %>%
+  mutate(pred_glm = predict(glm_fit, newdata = test_data))
+
+glm_metrics <- test_data %>%
+  summarise(
+    MAPE = mean(abs((Sales - pred_glm) / Sales)) * 100,
+    RMSE = sqrt(mean((Sales - pred_glm)^2)),
+    ME   = mean(Sales - pred_glm)
+  )
+
+glm_metrics
+```
+
+### Aggregate-level comparison (same scale as baseline, different inputs)
+
+```{r}
+daily_compare <- test_data %>%
+  group_by(Date) %>%
+  summarise(Actual = sum(Sales), Predicted = sum(pred_glm))
+
+daily_compare %>%
+  summarise(
+    MAPE = mean(abs((Actual - Predicted) / Actual)) * 100,
+    RMSE = sqrt(mean((Actual - Predicted)^2)),
+    ME   = mean(Actual - Predicted)
+  )
+```
+
+### Checking whether Monday bias persists in the feature model
+
+```{r}
+test_data %>%
+  mutate(weekday = wday(Date, label = TRUE),
+         error = Sales - pred_glm) %>%
+  group_by(weekday) %>%
+  summarise(MeanError = mean(error), MAPE = mean(abs(error/Sales))*100)
+```
+
+### Investigate Sunday anomaly
+
+```{r}
+test_data %>% filter(wday(Date, label = TRUE) == "Sun") %>% count(Store)
+```
+
+Sunday's elevated error is explained by store count: only 33 of 1,115 stores are ever open on Sunday, and this small, atypical subgroup is likely underrepresented in what the model learned about day-of-week effects. This is a known limitation rather than a broader model failure, and not a priority to address before comparing against a tree-based model, since it affects a small fraction of total sales volume.
+
+### Recipe and model spec
+
+```{r}
+library(ranger)
+library(vip)
+
+rf_recipe <- recipe(
+  Sales ~ DayOfWeek + Promo + StateHoliday + SchoolHoliday +
+          StoreType + Assortment + CompetitionDistance + CompDist_missing,
+  data = train_data
+)
+
+rf_spec <- rand_forest(trees = 300, mtry = 4, min_n = 10) %>%
+  set_engine("ranger", importance = "permutation",
+             num.threads = parallel::detectCores() - 1) %>%
+  set_mode("regression")
+
+rf_workflow <- workflow() %>%
+  add_recipe(rf_recipe) %>%
+  add_model(rf_spec)
+```
+
+### Fit model
+
+```{r}
+rf_fit <- rf_workflow %>%
+  fit(data = train_data)
+```
+
+### Predict and evaluate — same pattern as the GLM
+
+```{r}
+test_data <- test_data %>%
+  mutate(pred_rf = predict(rf_fit, new_data = test_data)$.pred)
+
+rf_metrics <- test_data %>%
+  summarise(
+    MAPE = mean(abs((Sales - pred_rf) / Sales)) * 100,
+    RMSE = sqrt(mean((Sales - pred_rf)^2)),
+    ME   = mean(Sales - pred_rf)
+  )
+
+rf_metrics
+```
+
+### Aggregate-level comparison like earlier
+
+```{r}
+daily_compare_rf <- test_data %>%
+  group_by(Date) %>%
+  summarise(Actual = sum(Sales), Predicted = sum(pred_rf))
+
+daily_compare_rf %>%
+  summarise(
+    MAPE = mean(abs((Actual - Predicted) / Actual)) * 100,
+    RMSE = sqrt(mean((Actual - Predicted)^2)),
+    ME   = mean(Actual - Predicted)
+  )
+```
+
+### Variable importance
+
+```{r}
+rf_fit %>%
+  extract_fit_parsnip() %>%
+  vip(num_features = 8)
+```
+
+```{r}
+train_data %>%
+  ggplot(aes(CompetitionDistance, Sales)) +
+  geom_smooth() +
+  scale_x_log10()
+```
+
+CompetitionDistance appears to function as a proxy for store location density (urban vs. rural) rather than a direct causal driver of sales. Stores with closer competitors tend to be in higher-traffic commercial areas, which likely explains the positive relationship between proximity and sales — this should not be read as "competition increases sales."
+
+
+Both feature-based models substantially outperformed the baseline time series methods, primarily due to access to promo and holiday information the baselines never had. The random forest modestly outperformed the GLM on both MAPE (5.43% vs 5.76%) and RMSE, largely by capturing a nonlinear relationship between CompetitionDistance and sales — likely a proxy for store location density — that the GLM's linear structure could not represent. The improvement from GLM to random forest was smaller than the improvement from baseline to GLM, suggesting that having the right features mattered more than model complexity in this case.

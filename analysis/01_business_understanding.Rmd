@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Purpose
+### Purpose
 
 This project applies demand forecasting methods to the Rossmann Store Sales
 dataset, a historical record of daily sales across ~1,100 drugstore locations
@@ -20,7 +20,7 @@ show the reasoning, assumptions, and business context behind it. This
 mirrors the kind of forecasting work I do professionally, applied here to a
 public dataset so the process and results can be shared openly.
 
-## The Business Problem
+### The Business Problem
 
 Rossmann store managers currently forecast sales up to six weeks in advance
 using local knowledge and judgment, and forecast accuracy varies widely
@@ -37,7 +37,7 @@ The core business problem this project addresses is: **can a systematic,
 data-driven forecast outperform ad hoc, store-level judgment, and by how
 much?**
 
-## Who Uses This Forecast
+### Who Uses This Forecast
 
 In a real organization, a forecast like this would have several different
 audiences, each needing something different from it — this maps closely
@@ -69,7 +69,7 @@ tuned for daily staffing decisions is not the same model you'd want feeding
 a quarterly budget conversation, even though both are "the same" forecast
 at different resolutions.
 
-## What "Good" Looks Like
+### What "Good" Looks Like
 
 For this project, I'll primarily track **MAPE** (mean absolute percentage
 error) since it's intuitive to communicate to non-technical stakeholders,
@@ -98,7 +98,7 @@ This kind of conditional accuracy check is standard practice in WFM and is
 often the difference between a forecast that looks good in a report and one
 that's actually trustworthy to plan against.
 
-## Cost of Being Wrong
+### Cost of Being Wrong
 
 Forecast errors in retail are asymmetric, and it's worth naming that
 explicitly rather than treating all error as equally bad:
@@ -117,7 +117,7 @@ inventory can usually be discounted and recovered in part. This project
 will treat underforecasting as the higher-cost error, though this
 assumption is worth revisiting once real cost data is available.
 
-## Constraints and Assumptions
+### Constraints and Assumptions
 
 - This is historical data, not a live feed — there's no ability to see how
   forecasts would perform in a true out-of-sample, real-time setting.
@@ -130,7 +130,7 @@ assumption is worth revisiting once real cost data is available.
   downstream decisions like actual inventory ordering or staffing
   optimization, though it's framed with those use cases in mind.
 
-## Next Steps
+### Next Steps
 
 The next step is exploratory data analysis: understanding the shape of the
 data, checking for missingness and outliers, and looking for the seasonal
