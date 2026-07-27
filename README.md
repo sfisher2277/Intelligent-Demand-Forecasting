@@ -19,7 +19,7 @@ A retail demand forecasting project built to demonstrate statistical analysis, t
 
 - [x] Repo setup
 - [x] Business understanding
-- [ ] Exploratory data analysis
-- [ ] Baseline forecast model
-- [ ] Model evaluation and iteration
+- [x] Exploratory data analysis
+- [x] Baseline forecast model
+- [x] Model evaluation and iteration
 - [ ] (Later) Python translation of key notebooks
