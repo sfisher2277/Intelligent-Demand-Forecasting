@@ -10,6 +10,9 @@ library(tidyverse)
 library(tidymodels)
 library(lubridate)
 
+train <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/train.csv")
+store <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/store.csv")
+
 # Rebuild the store-day level dataset (not aggregated in this part — one row per store per day)
 model_data <- train %>%
   left_join(store, by = "Store") %>%
