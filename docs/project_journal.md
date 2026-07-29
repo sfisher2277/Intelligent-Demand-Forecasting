@@ -192,3 +192,21 @@
   executive summary as a standalone, non-technical artifact
 - Phase 7 (Python translation) deferred until Python for Data
   Analysis coursework begins next semester
+
+
+### July 29, 2026 (cont.)
+
+**Did:**
+- Discussed next steps after completing Phase 6
+- Decided against starting a new portfolio project or the Rossmann
+  API idea for now
+- Decided to pursue Phase 7 (Python translation) when ready, scoped
+  down from the original plan: start with just 02_data_exploration
+  translated to pandas/matplotlib, not the full project, and not the
+  modeling notebooks until sklearn is covered in coursework
+
+**Questions / next steps:**
+- When ready: set up python/ subfolder, keep R version intact
+  alongside it, translate EDA notebook chunk by chunk (write fresh,
+  don't transliterate line-by-line — that's where the actual
+  learning happens)
