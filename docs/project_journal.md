@@ -148,3 +148,47 @@
   from EDA
 - Possible follow-up (lower priority): investigate whether the
   specific week SNAIVE copied from for Monday was itself anomalous
+
+
+### July 29, 2026
+
+**Did:**
+- Built 05_model_evaluation.Rmd: consolidated comparison of all five
+  models (SNAIVE, ETS, ARIMA, GLM, Random Forest) on the same
+  aggregate scale
+- Added conditional accuracy breakdowns by weekday, Promo, and
+  StoreType for GLM vs. Random Forest
+- Translated MAPE into an illustrative daily-dollar-error figure to
+  connect back to the cost-of-being-wrong framing from Phase 2
+- Wrote a final recommendation section weighing interpretability
+  (GLM) against targeted accuracy gains (Random Forest)
+- Added an AI tooling disclosure to the README
+
+**Found:**
+- Full model ranking by aggregate MAPE: RF (5.43%) < GLM (5.76%) 
+  ARIMA (21.8%) < ETS (16.9%)... wait, correct order: RF < GLM 
+  ETS < SNAIVE < ARIMA
+- Random Forest's advantage over GLM is NOT uniform — it's small
+  and consistent for Promo (~6-7 pts) but dramatically larger for
+  atypical, underrepresented segments: Sunday (-47 pts MAPE) and
+  StoreType b (-23 pts MAPE)
+- This means model choice should depend on use case: GLM's
+  interpretability may outweigh its small accuracy gap for
+  high-level/executive reporting, while Random Forest earns its
+  complexity specifically for atypical stores/days
+- Random Forest carries a slightly higher bias toward
+  overforecasting than GLM (+106K vs +70K ME) — a real tradeoff
+  worth naming given underforecasting/stockouts were framed as the
+  costlier error type in the business understanding doc
+- Final recommendation: no single winner — GLM for
+  interpretability/executive use, Random Forest specifically flagged
+  for known atypical segments
+
+**Questions / next steps:**
+- Phase 6 complete — core analytical arc of the project (business
+  understanding through evaluation/recommendation) is done
+- Next: housekeeping (README roadmap update, confirm all notebooks
+  knit cleanly from a fresh session) + draft a plain-language
+  executive summary as a standalone, non-technical artifact
+- Phase 7 (Python translation) deferred until Python for Data
+  Analysis coursework begins next semester
