@@ -26,5 +26,5 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 - [x] Exploratory data analysis
 - [x] Baseline forecast models (SNAIVE, ETS, ARIMA)
 - [x] Feature-based models (GLM, Random Forest)
-- [ ] Model evaluation, business impact, and final recommendation
+- [x] Model evaluation, business impact, and final recommendation
 - [ ] (Later) Python translation of key notebooks
