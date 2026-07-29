@@ -6,7 +6,9 @@ A retail demand forecasting project built to demonstrate statistical analysis, t
 
 **Background:** I currently work as a WFM forecast analyst and am pursuing an M.S. in Data Analytics at Penn State. This repo is where I'm applying coursework to a real, self-directed forecasting problem as I build toward a data science career.
 
-**Status:** Model evaluation and comparison in progress (Phase 6).
+**Status:** Core analysis complete through model evaluation and recommendation (Phase 6). Executive summary available.
+
+**For a non-technical summary of this project, see [EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md).**
 
 ## A Note on Tooling
 
