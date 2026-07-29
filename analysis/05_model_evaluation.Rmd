@@ -1,0 +1,150 @@
+---
+title: "05_model_evaluation"
+author: "Shawn Fisher"
+date: "2026-07-29"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(tidymodels)
+library(ranger)
+
+# Rebuild model_data (same as 04)
+model_data <- train %>%
+  left_join(store, by = "Store") %>%
+  filter(Open == 1) %>%
+  mutate(
+    DayOfWeek = factor(DayOfWeek),
+    StateHoliday = factor(StateHoliday),
+    StoreType = factor(StoreType),
+    Assortment = factor(Assortment),
+    Store = factor(Store),
+    CompDist_missing = is.na(CompetitionDistance),
+    CompetitionDistance = if_else(is.na(CompetitionDistance),
+                                   median(CompetitionDistance, na.rm = TRUE),
+                                   CompetitionDistance)
+  ) %>%
+  select(Store, Date, Sales, DayOfWeek, Promo, StateHoliday, SchoolHoliday,
+         StoreType, Assortment, CompetitionDistance, CompDist_missing)
+
+cutoff <- max(model_data$Date) - 42
+train_data <- model_data %>% filter(Date <= cutoff)
+test_data  <- model_data %>% filter(Date > cutoff)
+
+# Refit GLM and RF (or re-source 04's model objects if you saved them)
+glm_fit <- glm(
+  Sales ~ DayOfWeek + Promo + StateHoliday + SchoolHoliday +
+          StoreType + Assortment + CompetitionDistance + CompDist_missing,
+  data = train_data, family = gaussian()
+)
+
+rf_recipe <- recipe(
+  Sales ~ DayOfWeek + Promo + StateHoliday + SchoolHoliday +
+          StoreType + Assortment + CompetitionDistance + CompDist_missing,
+  data = train_data
+)
+rf_spec <- rand_forest(trees = 300, mtry = 4, min_n = 10) %>%
+  set_engine("ranger", importance = "permutation",
+             num.threads = parallel::detectCores() - 1) %>%
+  set_mode("regression")
+rf_fit <- workflow() %>% add_recipe(rf_recipe) %>% add_model(rf_spec) %>%
+  fit(data = train_data)
+
+test_data <- test_data %>%
+  mutate(
+    pred_glm = predict(glm_fit, newdata = test_data),
+    pred_rf  = predict(rf_fit, new_data = test_data)$.pred
+  )
+```
+
+### Consolidated comparison table
+
+```{r}
+library(tidyverse)
+library(gt)
+
+model_comparison <- tibble::tribble(
+  ~Model, ~MAPE, ~rsme, ~me,
+  "SNAIVE", 17.4, 1775080, -914640,
+  "ETS", 16.9, 1422687, -448370,
+  "ARIMA", 21.8, 1337020, -175500,
+  "GLM", 5.76, 540956, 106119,
+  "Ramdom Forest", 5.43, 540956, 106119
+)
+
+model_comparison %>%
+  arrange(MAPE) %>%
+  gt::gt()
+```
+
+```{r}
+model_comparison %>%
+  ggplot(aes(x = reorder(Model, MAPE), y = MAPE)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "MAPE by Model", x = NULL, y = "MAPE %")
+```
+
+### Conditional accuracy by Weekday, Promo, and StoreType
+
+```{r}
+comparison_by_weekday <- test_data %>% 
+  mutate(weekday = wday(Date, label = TRUE)) %>% 
+  group_by(weekday) %>% 
+  summarise(
+    GLM_MAPE = mean(abs((Sales - pred_glm) / Sales)) * 100,
+    RF_MAPE = mean(abs((Sales - pred_rf) / Sales)) * 100
+  )
+
+comparison_by_promo <- test_data %>%
+  group_by(Promo) %>%
+  summarise(
+    GLM_MAPE = mean(abs((Sales - pred_glm) / Sales)) * 100,
+    RF_MAPE  = mean(abs((Sales - pred_rf) / Sales)) * 100
+  )
+
+comparison_by_storetype <- test_data %>%
+  group_by(StoreType) %>%
+  summarise(
+    GLM_MAPE = mean(abs((Sales - pred_glm) / Sales)) * 100,
+    RF_MAPE  = mean(abs((Sales - pred_rf) / Sales)) * 100
+  )
+
+comparison_by_weekday
+comparison_by_promo
+comparison_by_storetype
+```
+
+Conditional accuracy checks reveal that the random forest's advantage over the GLM is not uniform. For Promo, the improvement is modest and consistent (~6-7 points regardless of promo status). But for the segments that were already identified as atypical or under-supported by data — Sunday (only 33 of 1,115 stores open) and StoreType b (17 stores) — the random forest's gain over the GLM is dramatically larger (47 points on Sunday, 23 points for StoreType b). This suggests the random forest's flexibility is particularly valuable for small, non-representative subgroups that a linear model's global coefficients handle poorly, while for the "typical" majority of stores and days, the two models perform much more similarly.
+
+### Business impact translation
+
+```{r}
+# Total absolute daily forecast error across the test period by model
+error_summary <- tibble::tribble(
+  ~Model, ~MAPE,
+  "SNAIVE", 17.4,
+  "ETS", 16.9,
+  "ARIMA", 21.8,
+  "GLM", 5.76,
+  "Random Forest", 5.43
+)
+
+# Average the daily sales in the test period
+avg_daily_sales <- test_ts %>% as_tibble() %>% summarise(avg = mean(Sales)) %>% pull(avg)
+
+error_summary <- error_summary %>% 
+  mutate(ApproxAvgDailyErrorDollars = round(avg_daily_sales * MAPE / 100))
+
+error_summary
+```
+
+Moving from the best baseline (ETS, 16.9% MAPE) to the random forest (5.43% MAPE) represents roughly a 3x reduction in average daily forecast error. Translated into operational terms familiar from workforce management: a forecast this much tighter would mean fewer emergency reorders (analogous to last-minute overtime approvals when a staffing forecast misses), less need for safety-stock buffers (analogous to over-scheduling to hedge against forecast uncertainty), and more confidence in decisions made further in advance. Given the business understanding framing that underforecasting (stockouts) is typically costlier than overforecasting, it's also worth noting the random forest's bias (+106K) is slightly higher than the GLM's (+70K) — meaning the more accurate model is also very slightly more prone to the costlier type of error, a tradeoff worth naming even though the overall accuracy gain likely outweighs it.
+
+### Final recommendation
+
+Based on aggregate accuracy, conditional accuracy by weekday/promo/store type, and interpretability, I would recommend GLM for a high-level executive view to understand why a forecast changed (a coefficient table is far easier to explain to an executive than a random forest's internal splits), and the accuracy gap (5.76% vs 5.43%) translates to a difference of roughly [$X] in average daily forecast error — small enough that interpretability likely matters more than that marginal accuracy gain at the executive level.
+
+However, I would recommend Random Forest to minimize worst-case error for atypical stores/days — its edge is concentrated exactly where mistakes would otherwise be largest (Sunday, StoreType b), which may matter more operationally than a small average-case difference. I would lean toward using this model if I were a forecaster for the company for the sake of better accuracy and adaptability, though it's worth noting the random forest carries a slightly higher bias toward overforecasting than the GLM, a tradeoff worth weighing against its accuracy gains given that underforecasting is typically the costlier error in this business context.
