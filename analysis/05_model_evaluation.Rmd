@@ -11,6 +11,10 @@ library(lubridate)
 library(tidymodels)
 library(ranger)
 
+train <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/train.csv")
+store <- read_csv("C:/Users/Shawn/Documents/GitHub/Intelligent-Demand-Forecasting/data/raw/store.csv")
+
+
 # Rebuild model_data (same as 04)
 model_data <- train %>%
   left_join(store, by = "Store") %>%
@@ -133,7 +137,7 @@ error_summary <- tibble::tribble(
 )
 
 # Average the daily sales in the test period
-avg_daily_sales <- test_ts %>% as_tibble() %>% summarise(avg = mean(Sales)) %>% pull(avg)
+avg_daily_sales <- test_data %>% as_tibble() %>% summarise(avg = mean(Sales)) %>% pull(avg)
 
 error_summary <- error_summary %>% 
   mutate(ApproxAvgDailyErrorDollars = round(avg_daily_sales * MAPE / 100))
