@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intelligent Demand Forecasting</title>
+<style>
+  :root {
+    --bg-top: #0d1120;
+    --bg-bot: #161c2e;
+    --text-main: #f0f4fa;
+    --text-sub: #9fadc7;
+    --accent-blue: #63b3ed;
+    --accent-amber: #f7a55c;
+    --border: #2a3452;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 100%);
+    color: var(--text-main);
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+  .eyebrow {
+    color: var(--accent-blue);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 2.4rem;
+    line-height: 1.15;
+    margin: 0 0 16px;
+  }
+  h1 .accent { color: var(--accent-amber); }
+  .lede {
+    color: var(--text-sub);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 620px;
+    margin-bottom: 40px;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 48px;
+  }
+  .tag {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-family: "SF Mono", Consolas, monospace;
+    color: #c8d2e2;
+  }
+  .section-title {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-sub);
+    margin: 0 0 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  .card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .card:hover {
+    border-color: var(--accent-blue);
+    background: rgba(99,179,237,0.06);
+  }
+  .card-num {
+    display: inline-block;
+    color: var(--accent-blue);
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 0.8rem;
+    margin-right: 10px;
+  }
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .card-desc {
+    color: var(--text-sub);
+    font-size: 0.92rem;
+    margin-top: 4px;
+  }
+  .footer {
+    color: var(--text-sub);
+    font-size: 0.88rem;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+  .footer a { color: var(--accent-blue); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Portfolio Project</div>
+  <h1>Intelligent Demand <span class="accent">Forecasting</span></h1>
+  <p class="lede">
+    An end-to-end forecasting project on the Rossmann Store Sales dataset —
+    from business framing and exploratory analysis through baseline time
+    series models, feature engineering, and final model evaluation.
+  </p>
+
+  <div class="tags">
+    <span class="tag">R</span>
+    <span class="tag">tidyverse</span>
+    <span class="tag">fable</span>
+    <span class="tag">tsibble</span>
+    <span class="tag">forecasting</span>
+  </div>
+
+  <div class="section-title">Read the Analysis</div>
+  <div class="card-list">
+
+    <a class="card" href="01_business_understanding.html">
+      <div><span class="card-num">01</span><span class="card-title">Business Understanding</span></div>
+      <div class="card-desc">Framing the forecasting problem, stakeholders, and success metrics.</div>
+    </a>
+
+    <a class="card" href="02_data_exploration.html">
+      <div><span class="card-num">02</span><span class="card-title">Data Exploration</span></div>
+      <div class="card-desc">Sales distributions, seasonality, holidays, and promotions.</div>
+    </a>
+
+    <a class="card" href="03_baseline_forecast.html">
+      <div><span class="card-num">03</span><span class="card-title">Baseline Forecast</span></div>
+      <div class="card-desc">SNAIVE, ETS, and ARIMA benchmark models with residual diagnostics.</div>
+    </a>
+
+    <a class="card" href="04_feature_model.html">
+      <div><span class="card-num">04</span><span class="card-title">Feature Engineering</span></div>
+      <div class="card-desc">Adding holidays, competition distance, store type, and calendar features.</div>
+    </a>
+
+    <a class="card" href="05_model_evaluation.html">
+      <div><span class="card-num">05</span><span class="card-title">Model Evaluation</span></div>
+      <div class="card-desc">Final model comparison, feature importance, and business implications.</div>
+    </a>
+
+  </div>
+
+  <div class="footer">
+    Full source and data on
+    <a href="https://github.com/sfisher2277/Intelligent-Demand-Forecasting">GitHub</a>
+    &nbsp;·&nbsp; project notes in
+    <a href="project_journal.md">project_journal.md</a>
+  </div>
+
+</div>
+</body>
+</html>

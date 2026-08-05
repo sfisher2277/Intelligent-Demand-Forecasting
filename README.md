@@ -18,8 +18,9 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 
 - `data/raw/` — original, unmodified source data
 - `data/processed/` — cleaned data ready for analysis
-- `analysis/` — R Markdown notebooks (business understanding, EDA, baseline forecasting, feature modeling, evaluation)
-- `docs/project_journal.md` — running log of work sessions and findings
+- `R/` — R Markdown notebooks (business understanding, EDA, baseline forecasting, feature modeling, evaluation)
+- `python/` — Python translations of select notebooks (in progress)
+- `docs/` — knitted HTML output (for easy reading without R) and `project_journal.md`
 
 ## Roadmap
 
