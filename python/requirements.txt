@@ -3,3 +3,5 @@ python-dotenv
 scikit-learn
 pyyaml
 dagshub
+fastapi
+uvicorn
