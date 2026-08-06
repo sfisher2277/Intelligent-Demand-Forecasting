@@ -1,0 +1,12 @@
+model:
+  n_estimators: 100
+  max_depth: 10
+  random_state: 42
+
+data:
+  train_path: "../../data/raw/train.csv"
+  store_path: "../../data/raw/store.csv"
+  test_split_date: "2015-06-01"
+
+features:
+  lag_days: [1, 7]
