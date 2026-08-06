@@ -4,7 +4,7 @@ import dagshub
 import mlflow
 import mlflow.sklearn
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_percentage_error, root_mean_squared_error
+from evaluate import compute_metrics
 
 dagshub.init(repo_owner='sfisher2277', repo_name='Intelligent-Demand-Forecasting', mlflow=True)
 mlflow.set_experiment("rossmann-forecasting")
@@ -66,12 +66,10 @@ def train_model(df: pd.DataFrame, config: dict):
 
         y_pred = model.predict(X_test)
 
-        mape = mean_absolute_percentage_error(y_test, y_pred)
-        rmse = root_mean_squared_error(y_test, y_pred)
+        metrics = compute_metrics(y_test, y_pred)
 
         mlflow.log_params(model_params)
-        mlflow.log_metric("mape", mape)
-        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metrics(metrics)
         mlflow.sklearn.log_model(model, "model")
 
         return model
