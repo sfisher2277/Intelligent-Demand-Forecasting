@@ -7,3 +7,9 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+
+.env
+.env.local
+python/models/*
+!python/models/.gitkeep
+ .ipynb_checkpoints/ 

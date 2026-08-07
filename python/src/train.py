@@ -3,11 +3,16 @@ import pandas as pd
 import dagshub
 import mlflow
 import mlflow.sklearn
+import os
+import joblib
 from sklearn.ensemble import RandomForestRegressor
 from evaluate import compute_metrics
 
 dagshub.init(repo_owner='sfisher2277', repo_name='Intelligent-Demand-Forecasting', mlflow=True)
 mlflow.set_experiment("rossmann-forecasting")
+
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
+MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
 
 def load_config(config_path: str) -> dict:
     """
@@ -71,5 +76,7 @@ def train_model(df: pd.DataFrame, config: dict):
         mlflow.log_params(model_params)
         mlflow.log_metrics(metrics)
         mlflow.sklearn.log_model(model, "model")
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        joblib.dump(model, MODEL_PATH)
 
         return model

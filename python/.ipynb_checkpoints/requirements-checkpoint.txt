@@ -5,3 +5,4 @@ pyyaml
 dagshub
 fastapi
 uvicorn
+joblib
