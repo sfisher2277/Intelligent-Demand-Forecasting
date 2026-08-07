@@ -247,3 +247,56 @@
   the same checks already done in R
 - Remember: & / | (not and/or) with explicit parentheses for
   compound pandas filters
+
+
+  ### August 7, 2026
+
+**Did:**
+- Built evaluate.py: compute_metrics() (standalone MAPE/RMSE/MAE calc,
+  pulled out of train_model()), get_run_history() and compare_runs()
+  (query and rank MLflow runs via the tracking API)
+- Wired train.py to call compute_metrics() instead of duplicating the
+  metric calculation inline; train_model() now logs mae alongside
+  mape/rmse for the first time
+- Fixed a missing entrypoint in train.py — the ingest -> build_features
+  -> train_model chain was only ever run manually from the pipeline
+  demo notebook; added an if __name__ == "__main__" block so
+  `python train.py` runs the full pipeline standalone
+- Built the FastAPI /predict endpoint (api/main.py): Pydantic request
+  schema, manual one-hot encoding for StoreType/Assortment (single-row
+  requests can't use pd.get_dummies the way build_features does),
+  reindexes by model.feature_names_in_ before predicting
+- Tested /predict end-to-end via the FastAPI /docs UI — confirmed
+  working, sensible non-zero prediction for realistic input
+- General tooling cleanup: fixed .gitignore (was missing the intended
+  python/models/* exclusion; added .ipynb_checkpoints/ too and
+  untracked already-committed checkpoint files), moved primary working
+  environment from Jupyter/standalone terminal to VS Code as a single
+  folder window
+
+**Found:**
+- mlflow.sklearn.log_model() on a recent MLflow version registers a
+  "Logged Model" entity (its own Model ID) rather than just a plain
+  run artifact — client.list_artifacts() on the run came back empty
+  even though DagsHub's UI showed the model. Loading via
+  models:/{model_id} hung indefinitely rather than erroring, which
+  looked like a DagsHub/MLflow version compatibility gap on that
+  specific endpoint rather than anything wrong with the run itself
+- Decided to sidestep rather than debug further: train.py now also
+  saves the model locally via joblib (python/models/model.pkl,
+  gitignored), and the API loads from disk instead of hitting MLflow
+  at request time — decouples experiment tracking (still fully
+  MLflow-based) from serving, which is a normal pattern and arguably
+  cleaner architecture anyway
+- PowerShell's default execution policy blocked conda's own
+  activation hook script from running in new terminals, silently
+  breaking `conda activate` — fixed once with
+  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+**Questions / next steps:**
+- Dockerize the API (last item on the original pipeline roadmap)
+- Minor: mlflow.sklearn.log_model(model, "model") throws a deprecation
+  warning (artifact_path -> name) — cosmetic, not urgent
+- Decide whether python/models/model.pkl should be committed for
+  reviewer convenience or left as "regenerate via train.py" — currently
+  gitignored, consistent with how data/ is handled

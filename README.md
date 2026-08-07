@@ -19,7 +19,7 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 - `data/raw/` — original, unmodified source data
 - `data/processed/` — cleaned data ready for analysis
 - `R/` — R Markdown notebooks (business understanding, EDA, baseline forecasting, feature modeling, evaluation)
-- `python/` — Python translations of select notebooks (in progress)
+- `python/` — Python pipeline: ingest, feature engineering, training, evaluation, and a FastAPI serving layer
 - `docs/` — knitted HTML output (for easy reading without R) and `project_journal.md`
 
 ## Roadmap
@@ -31,3 +31,15 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 - [x] Feature-based models (GLM, Random Forest)
 - [x] Model evaluation, business impact, and final recommendation
 - [ ] (Later) Python translation of key notebooks
+
+## Running the Prediction API
+
+The trained model is served locally via FastAPI.
+
+1. Train a model (saves to `python/models/model.pkl`):
+cd python/src
+python train.py
+2. Start the API from `python/`:
+cd ..
+uvicorn api.main:app --reload
+3. Test it interactively at `http://127.0.0.1:8000/docs`, or send a POST request to `/predict` with a JSON body matching the feature schema in `api/main.py`.
