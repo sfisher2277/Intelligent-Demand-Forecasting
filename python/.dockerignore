@@ -1,0 +1,6 @@
+notebooks/
+.ipynb_checkpoints/
+__pycache__/
+tests/
+.vscode/
+*.pyc
