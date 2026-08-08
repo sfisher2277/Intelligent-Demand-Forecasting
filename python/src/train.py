@@ -5,6 +5,8 @@ import mlflow
 import mlflow.sklearn
 import os
 import joblib
+from ingest import ingest_data
+from features import build_features
 from sklearn.ensemble import RandomForestRegressor
 from evaluate import compute_metrics
 
@@ -80,3 +82,22 @@ def train_model(df: pd.DataFrame, config: dict):
         joblib.dump(model, MODEL_PATH)
 
         return model
+if __name__ == "__main__":
+    config = load_config("../config/model_config.yaml")
+
+    expected_columns = ["Store", "Sales", "Date", "StoreType", "Open", "Promo", "DayOfWeek", "SchoolHoliday", "StateHoliday"]
+    critical_cols = ["Store", "Sales", "Date"]
+
+    df = ingest_data(
+        train_path=config["data"]["train_path"],
+        store_path=config["data"]["store_path"],
+        expected_columns=expected_columns,
+        critical_cols=critical_cols,
+        min_rows=1000
+    )
+
+    df_features = build_features(df, config["features"]["lag_days"])
+
+    train_model(df_features, config)
+
+    print(f"Training complete. Model saved to {MODEL_PATH}")
