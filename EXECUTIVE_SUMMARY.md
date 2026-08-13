@@ -1,9 +1,9 @@
 # Intelligent Demand Forecasting — Executive Summary
 
-**Author:** Shawn Fisher
-**Dataset:** Rossmann Store Sales (1,115 stores, ~2.5 years of daily sales)
-**Full technical analysis:** see the `R/` notebooks (01–05) or their knitted HTML versions in `docs/`.
-**Production pipeline:** see `python/` for the full implementation (pipeline, API, Docker).
+- **Author:** Shawn Fisher
+- **Dataset:** Rossmann Store Sales (1,115 stores, ~2.5 years of daily sales)
+- **Full technical analysis:** see the `R/` notebooks (01–05) or their knitted HTML versions in `docs/`.
+- **Production pipeline:** see `python/` for the full implementation (pipeline, API, Docker).
 
 ## The Business Question
 
