@@ -39,6 +39,7 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 - [x] Python pipeline: ingestion, feature engineering, MLflow-tracked training, evaluation
 - [x] FastAPI serving layer with a working `/predict` endpoint
 - [x] Dockerized the API
+- [x] Unit test coverage for the ingestion and feature engineering modules
 
 ## Running the Prediction API
 
