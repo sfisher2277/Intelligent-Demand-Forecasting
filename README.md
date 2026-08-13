@@ -4,12 +4,17 @@ A retail demand forecasting project built to demonstrate statistical analysis, t
 
 **Dataset:** Rossmann Store Sales (Kaggle)
 
-**Background:** I currently work as a WFM forecast analyst and am pursuing an M.S. in Data Analytics at Penn State. This repo is where I'm applying coursework to a real, self-directed forecasting problem as I build toward a data science career.
+**Background:** I currently work as a WFM forecast analyst and am pursuing an M.D.A. in Data Analytics at Penn State. This repo is where I'm applying coursework to a real, self-directed forecasting problem as I build toward a data science career.
 
 **Status:** Core analysis complete (R). Python pipeline complete: ingestion, feature engineering, MLflow-tracked training, evaluation, and a FastAPI serving layer, containerized with Docker. Executive summary available.
 
 **For a non-technical summary of this project, see [EXECUTIVE_SUMMARY.md](./EXECUTIVE_SUMMARY.md).**
+
+
+
 ![API Demo](./docs/demo.gif)
+
+
 
 ## A Note on Tooling
 
@@ -37,20 +42,4 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 
 ## Running the Prediction API
 
-The trained model is served locally via FastAPI. Two ways to run it:
-
-**Option A — Docker (no local Python setup needed):**
-cd python
-docker build -t rossmann-api .
-docker run -p 8000:8000 rossmann-api
-
-**Option B — directly with Python:**
-1. Train a model (saves to `python/models/model.pkl`):
-cd python/src
-python train.py
-
-2. Start the API from `python/`:
-cd ..
-uvicorn api.main:app --reload
-
-Either way, test it interactively at `http://127.0.0.1:8000/docs`, or send a POST request to `/predict` with a JSON body matching the feature schema in `api/main.py`.
+1. **Train a model** (produces `python/models/model.pkl`, not included in the repo):
