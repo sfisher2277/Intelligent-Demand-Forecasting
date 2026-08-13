@@ -300,3 +300,34 @@
 - Decide whether python/models/model.pkl should be committed for
   reviewer convenience or left as "regenerate via train.py" — currently
   gitignored, consistent with how data/ is handled
+
+
+  ### August 11, 2026
+
+**Did:**
+- Wrote real unit test coverage for the Python pipeline: test_ingest.py
+  (schema validation failure modes, the store-metadata left-join edge
+  case, an end-to-end ingest_data test using synthetic CSVs via
+  pytest's tmp_path) and test_features.py (lag feature correctness,
+  including a dedicated test confirming Sales_lag_1/7 don't leak
+  across different stores via groupby, one-hot encoding, holiday
+  flags, and the full build_features pipeline)
+- 18/18 tests passing against the real ingest.py/features.py
+- Fixed a couple of README issues: missing code fences that had
+  collapsed the "Running the Prediction API" commands into a single
+  unreadable paragraph, restructured that section since the old
+  "Option A/B" framing incorrectly implied Docker was a fully
+  standalone path (model.pkl is gitignored, so training via Python
+  is a required first step regardless of how you serve it), and
+  corrected a leftover "M.S." reference to M.D.A.
+
+**Found:**
+- All tests run against small synthetic DataFrames rather than the
+  real Rossmann CSVs — fast (well under a second for all 18) and no
+  dependency on the multi-million-row dataset being present locally
+
+**Questions / next steps:**
+- No open items on the original pipeline roadmap; project is
+  feature-complete, documented, and tested
+- Possible future add-ons (not urgent): cloud deployment of the API
+  (Render/Railway/Fly.io) for a live demo URL beyond local Docker
