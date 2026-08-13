@@ -44,3 +44,20 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 ## Running the Prediction API
 
 1. **Train a model** (produces `python/models/model.pkl`, not included in the repo):
+cd python/src
+python train.py
+
+2. **Serve it** — either:
+- **Docker:**
+  ```
+  cd ..
+  docker build -t rossmann-api .
+  docker run -p 8000:8000 rossmann-api
+  ```
+- **Directly with Python:**
+  ```
+  cd ..
+  uvicorn api.main:app --reload
+  ```
+
+Either way, test it interactively at `http://127.0.0.1:8000/docs`, or send a POST request to `/predict` with a JSON body matching the feature schema in `api/main.py`.
