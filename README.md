@@ -43,9 +43,11 @@ This project was built with the assistance of Claude (Anthropic) for code drafti
 
 ## Running the Prediction API
 
-1. **Train a model** (produces `python/models/model.pkl`, not included in the repo):
-cd python/src
-python train.py
+1. **Train a model** (produces `python/models model.pkl`, not included in the repo):
+  ```
+  cd python/src
+  python train.py
+  ```
 
 2. **Serve it** — either:
 - **Docker:**
